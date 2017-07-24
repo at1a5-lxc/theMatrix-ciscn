@@ -1,0 +1,86 @@
+@font-face {
+  font-family: NotoSansHans-Black;
+  src:url('./font/NotoSansHans-Black.otf')format('otf')
+}
+@font-face {
+  font-family: NotoSansHans-Bold;
+  src:url('./font/NotoSansHans-Bold.otf')format('otf')
+}
+@font-face {
+  font-family: NotoSansHans-Medium;
+  src:url('./font/NotoSansHans-Medium.otf')format('otf')
+}
+
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #333333;
+}
+
+#leftside{
+  position: fixed;
+  width: 50%;
+  top:10%;
+}
+
+#video-canvas{
+  position: relative;
+  width:100%;
+  left: 20px;
+  top:10px;
+  border-radius: 6px;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+}
+
+#videotag{
+  position: relative;
+  background: #27AE60;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+  width: 40%;
+  height: 8%;
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  font-family: NotoSansHans-Bold;
+  font-size: 24px;
+  text-align: center;
+  justify-content: center;
+  color: #F2F2F2;
+  left:40px;
+  top:20px;
+  z-index: 3;
+}
+
+@media screen and (max-width: 950px){
+#audiotag{
+
+  position:relative;
+  background: #C4C4C4;
+  border-radius: 6px;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  width:100%;
+  height:120px;
+  top:20px;
+  left:20px;
+
+}
+
+}
+
+@media screen and (min-width: 950px){
+  #audiotag{
+    position: fixed;
+    background: #C4C4C4;
+    border-radius: 6px;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    width:40%;
+    height:100px;
+    left:10%;
+    top:80%;
+
+  }
+}
