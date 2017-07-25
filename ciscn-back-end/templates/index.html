@@ -7,18 +7,120 @@
 <link rel='stylesheet prefetch' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css'>
 
 <script type="text/javascript">
+    function parseJson(w)//将json字符串转换成json对象
+    {
+        return eval("("+w+")");
+    }
+</script>
+
+<script type="text/javascript">
+
     ws = new WebSocket('ws://{{ipAddress}}:{{lp}}/soc');//创建websocket连接 这里的ipAddress和lp由Tornado填充
     ws.onmessage = function(event) //当服务器发送给客户端数据的时候 客户端的响应函数
                    {
                         var recvStr=event.data;//输入参数的data成员变量包含了发送过来的数据
                         $("#info").html(recvStr);
+                        if(recvStr[0]=='{')//第一个字符是左括号 默认此时是json字符串
+                        {
+                            pkg=parseJson(recvStr);
+                            PkgType=pkg.Type;
+                            PkgContent=pkg.Content;
+
+                        }
                    };
+
+    function startFakeAp()//开启钓鱼WiFi按钮出发的事件
+    {
+        var ssidInfo={//这里将用户填写的内容获取下来放到ssidInfo中
+            'ssid':'seu-wlan',
+            'password':'',
+            'key_mgmt':'none',
+            'action':'start'
+        };
+        var data = {
+                    'Type':'StartFakeAp',//类型是StartFakeAp
+                    'Content':ssidInfo
+                };
+        ws.send(JSON.stringify(data));//转换成字符串，通过websocket发送给服务器
+    }
+
+     function connectWifiAp()//开启钓鱼WiFi按钮出发的事件
+    {
+        var content={//这里将用户填写的内容获取下来放到ssidInfo中
+            'ssid':'seu-wlan',
+            'password':'',
+            'action':'connect'
+        };
+        var data = {
+                    'Type':'ConnectWifiAp',//类型是StartFakeAp
+                    'Content':content
+                };
+        ws.send(JSON.stringify(data));//转换成字符串，通过websocket发送给服务器
+    }
+
+    function startWifiScan()//WiFi扫描按钮触发的事件
+    {
+        var content={//这里填写的东西没有实际作用 只是为了填充content域
+            'action':'start'
+        };
+
+        var data = {
+                    'Type':'StartWifiScan',//类型是StartFakeAp
+                    'Content':content
+                };
+        ws.send(JSON.stringify(data));//转换成字符串，通过websocket发送给服务器
+    }
+
+    function DownloadFile()//WiFi扫描按钮触发的事件
+    {
+        var content={//这里填写的东西没有实际作用 只是为了填充content域
+            'filename':'toDo.txt'
+        };
+
+        var data = {
+                    'Type':'DownloadFile',//类型是StartFakeAp
+                    'Content':content
+                };
+        ws.send(JSON.stringify(data));//转换成字符串，通过websocket发送给服务器
+    }
+
+    function GetPathFiles()//WiFi扫描按钮触发的事件
+    {
+        var content={//这里填写的东西没有实际作用 只是为了填充content域
+            'filepath':'.'
+        };
+
+        var data = {
+                    'Type':'GetPathFiles',//类型是StartFakeAp
+                    'Content':content
+                };
+        ws.send(JSON.stringify(data));//转换成字符串，通过websocket发送给服务器
+    }
+
+    function SearchFile()
+    {
+        var content={
+            'searchname':document.getElementById("inputText").value
+        };
+        var data = {
+                    'Type':'SearchFile',
+                    'Content':content
+                };
+        ws.send(JSON.stringify(data));//转换成字符串，通过websocket发送给服务器
+    }
 
     function sendMsg()
     {
         var value=document.getElementById("inputText").value;
+        var ssidInfo={
+            'ssid':'seu-wlan',
+            'password':'',
+            'key_mgmt':'none',
+            'action':'start'
+        };
         var data = {
-                    'value':value
+                    'Type':'SetFakeAp',
+                    'Content':ssidInfo
                 };//转换成json字符串发送，注意服务器接受到的实际上是字符串形式
 
         ws.send(JSON.stringify(data));//通过websocket发送给服务器
@@ -32,6 +134,24 @@
     <br>
     <br>
     To Send: <input type="text" id="inputText" >&nbsp;&nbsp; <button onclick="sendMsg()">SEND</button>
+    <br>
+    <br>
+    <button onclick="startWifiScan()">开启wifi扫描</button>
+    <br>
+    <br>
+    <button onclick="startFakeAp()">开启钓鱼wifi</button>
+    <br>
+    <br>
+    <button onclick="connectWifiAp()">连接wifi</button>
+    <br>
+    <br>
+    <button onclick="GetPathFiles()">获取当前目录文件</button>
+    <br>
+    <br>
+    <button onclick="DownloadFile()">下载文件</button>
+    <br>
+    <br>
+    <button onclick="SearchFile()">搜索文件</button>
     <br>
     <br>
     Receive: <p id="info"></p>
