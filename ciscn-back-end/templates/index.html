@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content=" initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>测试</title>
+<script src="http://wow.techbrood.com/libs/jquery/jquery-1.11.1.min.js"></script>
+<link rel='stylesheet prefetch' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css'>
+
+<script type="text/javascript">
+    ws = new WebSocket('ws://{{ipAddress}}:{{lp}}/soc');//创建websocket连接 这里的ipAddress和lp由Tornado填充
+    ws.onmessage = function(event) //当服务器发送给客户端数据的时候 客户端的响应函数
+                   {
+                        var recvStr=event.data;//输入参数的data成员变量包含了发送过来的数据
+                        $("#info").html(recvStr);
+                   };
+
+    function sendMsg()
+    {
+        var value=document.getElementById("inputText").value;
+        var data = {
+                    'value':value
+                };//转换成json字符串发送，注意服务器接受到的实际上是字符串形式
+
+        ws.send(JSON.stringify(data));//通过websocket发送给服务器
+    }
+
+</script>
+
+</head>
+
+<body>
+    <br>
+    <br>
+    To Send: <input type="text" id="inputText" >&nbsp;&nbsp; <button onclick="sendMsg()">SEND</button>
+    <br>
+    <br>
+    Receive: <p id="info"></p>
+</body>
+
+</html>

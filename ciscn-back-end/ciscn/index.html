@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>The Matrix</title>
+
+    <!-- Bootstrap -->
+    <script src="js/jquery-3.2.0.min.js"></script>
+    <script src="js/bootstrap.min.js" ></script>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+
+    <![endif]-->
+    <!--<script type="text/javascript" src='https://webapi.amap.com/maps?v=1.3&key=3d015765813d9d68af5caf5450886bd1'></script>-->
+    <!--<script src="//webapi.amap.com/ui/1.0/main.js"></script>-->
+    <link rel="stylesheet" href="CSS/index.css" type="text/css" />
+    <!--<script src="https://unpkg.com/vue/dist/vue.js"></script>-->
+    <script src="js/wavesurfer.min.js"></script>
+</head>
+
+<body>
+
+
+<div class="container">
+    <div class="row">
+    </div>
+
+    <div class="row" style="height:600px">
+        <div class="col-md-8" style="margin-right:0px">
+            <div class="container-fluid">
+            <div class="row">
+                <div class="panel panel-success">
+                    <div class="panel-heading">实时图传</div>
+                    <div class="panel-body">
+                        <img src="http://192.168.137.60:8080/?action=stream"/>
+                        
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+            
+                <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingTerminal">
+                            <h4 class="panel-title">
+                                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTerminal" aria-expanded="true" aria-controls="collapseTerminal">
+                                    WiFi扫描
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseTerminal" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingTerminal">
+                            <div class="panel-body" style="padding-right: -10px;">
+                                 <iframe style="width:100%;height:500px;margin-bottom: -20px;
+                                 margin-top: -15px;
+                                 margin-left: -15px;
+                                 margin-right:-60px" src="https://192.168.137.60"></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+
+            
+            </div>
+
+
+            </div>
+
+
+        </div>
+</div>
+
+        <div class="col-md-4">
+            <div class="container-fluid">
+
+<!--
+                <div class="panel panel-success">
+                    <div class="panel-heading">GPS轨迹地图</div>
+                    <div class="panel-body">
+
+                    </div>
+                </div>
+-->
+
+                <div class="panel panel-success">
+                    <div class="panel-heading">音频侦听</div>
+                    <div class="panel-body" style="background-color: #333333;">
+                        <div id="waveform""></div>
+                    </div>
+                    <div class="panel-footer">
+                        <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-md-12 text-center">
+                                <div class="btn-group" role="group" style="margin-left: auto;margin-right: auto;" aria-label="...">
+                                    <button id="lastAudio" type="button" class="btn btn-default">上一段</button>
+                                    <button id="playAudio" type="button" class="btn btn-default">播放</button>
+                                    <button id="pauseAudio" type="button" class="btn btn-default">暂停</button>
+                                    <button id="nextAudio" type="button" class="btn btn-default">下一段</button>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                 
+
+<!--
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingThree">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    SSH
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+                            <div class="panel-body">
+                            </div>
+                        </div>
+                    </div>
+-->
+
+<!--
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingFour">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                    飞行器运动控制
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingFour">
+                            <div class="panel-body">
+                                Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
+                            </div>
+                        </div>
+                    </div>
+-->
+
+
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingFive">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                                    钓鱼WiFi
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseFive" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingFive">
+                            <div class="panel-body">
+
+                                <div class="input-group">
+                                    <span class="input-group-addon" id="basic-addon1">SSID</span>
+                                    <input type="text" class="form-control" placeholder="fake_ap" aria-describedby="basic-addon1">
+                                </div>
+                                <br>
+                                <div class="input-group">
+                                    <span class="input-group-addon" id="basic-addon1">Channel</span>
+                                    <input type="text" class="form-control" placeholder="11" aria-describedby="basic-addon1">
+                                </div>
+                                <br>
+                                <div class="input-group">
+                                    <span class="input-group-addon" id="basic-addon1">ARP Spoof</span>
+                                    <input type="text" class="form-control" placeholder="localhost:*" aria-describedby="basic-addon1">
+                                </div>
+                                <br>
+                                <div class="btn-group" role="group" aria-label="...">
+                                    <button type="button" class="btn btn-danger">
+                                        <span class="glyphicon glyphicon-screenshot" aria-hidden="true"></span>
+                                        Start
+                                    </button>
+                                    &nbsp;&nbsp;
+                                    <button type="button" class="btn btn-default">Stop</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+<!--                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingSix">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                                    AP信息
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseSix" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingSix">
+                            <div class="panel-body">
+                                Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3 wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus labore sustainable VHS.
+                            </div>
+                        </div>
+                    </div>
+-->
+                    <div class="panel panel-default">
+                        <div class="panel-heading" role="tab" id="headingSeven">
+                            <h4 class="panel-title">
+                                <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+                                    网络抓包
+                                </a>
+                            </h4>
+                        </div>
+                        <div id="collapseSeven" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingSeven">
+                            <div class="panel-body">
+                                <p id="PacketCapture" style='
+                                height: 300px;
+                                width: 100%;
+                                overflow:auto;'>
+                                First line.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </div>
+    </div>
+</div>
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+
+</body>
+<script type="text/javascript">
+    function parseJson(w)
+    {
+        return eval("("+w+")");
+    }
+</script>
+<script>
+    var wavesurfer = WaveSurfer.create({
+         container: '#waveform',
+         waveColor: 'white',
+         progressColor: 'green'
+         });
+    var wavFrame=0;
+    function initWave() 
+    {
+         wavesurfer.load('src/0.wav');
+         $('#playAudio').click(
+             function(){
+                 wavesurfer.play();
+             }
+         );
+         $('#pauseAudio').click(
+             function(){
+                 wavesurfer.pause();
+             }
+         )
+           
+         wavesurfer.on('ready',function(){wavesurfer.play();});
+         wavesurfer.on('finish',function(){wavFrame++;wavesurfer.load('src/'+wavFrame+'.wav');});
+    }
+    $(document).ready(initWave);
+</script>
+<script type="text/javascript">
+    ws = new WebSocket('ws://192.168.137.60:8888/soc');
+    ws.onmessage = function(event) {
+        var recvStr=event.data;
+        tmp=$("#PacketCapture").text();
+        $("#PacketCapture").text(tmp+recvStr+"\r\n");
+        $("#PacketCapture").scrollTop($("#PacketCapture").scrollTop()+500);
+    }
+</script>
+
+</html>
